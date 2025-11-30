@@ -1,0 +1,328 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MEMBER
+  STAFF
+  ADMIN
+}
+
+enum CourtType {
+  INDOOR
+  OUTDOOR
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum MatchType {
+  SINGLES
+  DOUBLES
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String? // For email/password auth
+  name      String?
+  phone     String?
+  address   String?
+  role      Role      @default(USER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  profile            Profile?
+  bookings           Booking[]
+  memberships        Membership[]
+  transactions       Transaction[]
+  eventRegistrations EventRegistration[]
+  invoices           Invoice[]
+  posOrders          POSOrder[]
+  accessLogs         AccessLog[]
+  matchesAsPlayer1   Match[]             @relation("Player1")
+  matchesAsPlayer2   Match[]             @relation("Player2")
+  matchesAsPlayer3   Match[]             @relation("Player3")
+  matchesAsPlayer4   Match[]             @relation("Player4")
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  bio         String?
+  skillRating Float? // e.g., DUPR rating
+  preferences Json? // Notification settings, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g., "guest_fee", "open_hours"
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Court {
+  id        String    @id @default(uuid())
+  name      String
+  type      CourtType @default(INDOOR)
+  surface   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  bookings       Booking[]
+  bookingWindows BookingWindow[]
+}
+
+model BookingWindow {
+  id        String   @id @default(uuid())
+  startTime DateTime // Time of day for this slot
+  endTime   DateTime
+  isPeak    Boolean  @default(false)
+  price     Float? // Override price for this specific window
+
+  courtId String
+  court   Court  @relation(fields: [courtId], references: [id])
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  startTime DateTime
+  endTime   DateTime
+  status    BookingStatus @default(PENDING)
+  price     Float
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  courtId String
+  court   Court  @relation(fields: [courtId], references: [id])
+
+  transactionId String?      @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+}
+
+model MembershipPlan {
+  id           String   @id @default(uuid())
+  name         String   @unique // e.g. "Gold Annual"
+  description  String?
+  price        Float
+  initiationFee Float     @default(0)
+  durationDays Int // 30, 365, etc.
+  
+  // Business Rules
+  bookingWindowDays    Int     @default(7)
+  courtDiscountPercent Float   @default(0) // 0.0 to 1.0
+  monthlyFreeSessions  Int     @default(0)
+  
+  benefits     Json? // Extra metadata
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+}
+
+model Membership {
+  id        String    @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  planId String
+  plan   MembershipPlan @relation(fields: [planId], references: [id])
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  sku         String    @unique
+  stock       Int       @default(0)
+  category    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  posItems POSItem[]
+}
+
+model POSOrder {
+  id        String   @id @default(uuid())
+  total     Float
+  status    String   @default("COMPLETED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String? // Optional, for guest checkout
+  user   User?   @relation(fields: [userId], references: [id])
+
+  items       POSItem[]
+  transaction Transaction?
+}
+
+model POSItem {
+  id       String @id @default(uuid())
+  quantity Int
+  price    Float // Price at time of sale
+
+  orderId String
+  order   POSOrder @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  amount    Float
+  dueDate   DateTime
+  isPaid    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  bookings    Booking[]
+  memberships Membership[]
+  transaction Transaction?
+}
+
+model Transaction {
+  id        String            @id @default(uuid())
+  amount    Float
+  type      TransactionType
+  status    TransactionStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  booking   Booking?
+  invoiceId String?  @unique
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+
+  posOrderId String?   @unique
+  posOrder   POSOrder? @relation(fields: [posOrderId], references: [id])
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  capacity    Int
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
+}
+
+model League {
+  id        String   @id @default(uuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches Match[]
+}
+
+model Match {
+  id        String    @id @default(uuid())
+  date      DateTime
+  type      MatchType @default(SINGLES)
+  score     String? // e.g. "11-9, 11-5"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  leagueId String?
+  league   League? @relation(fields: [leagueId], references: [id])
+
+  // Players (up to 4 for doubles)
+  player1Id String
+  player1   User   @relation("Player1", fields: [player1Id], references: [id])
+
+  player2Id String
+  player2   User   @relation("Player2", fields: [player2Id], references: [id])
+
+  player3Id String?
+  player3   User?   @relation("Player3", fields: [player3Id], references: [id])
+
+  player4Id String?
+  player4   User?   @relation("Player4", fields: [player4Id], references: [id])
+}
+
+model AccessLog {
+  id        String   @id @default(uuid())
+  action    String // e.g. "DOOR_OPEN", "LOGIN"
+  timestamp DateTime @default(now())
+  metadata  Json?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+}

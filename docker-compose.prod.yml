@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-smashpoint}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - smashpoint-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-smashpoint}
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-supersecretprodkey}
+      CORS_ORIGIN: http://localhost:8080
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smashpoint-net
+    restart: always
+
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    networks:
+      - smashpoint-net
+    restart: always
+
+networks:
+  smashpoint-net:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:
