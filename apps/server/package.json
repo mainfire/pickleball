@@ -5,7 +5,7 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/index.ts",
         "start": "node dist/index.js",
         "lint": "eslint src/**/*.ts",
         "test": "jest"
@@ -35,9 +35,10 @@
         "ts-jest": "^29.4.5",
         "ts-node": "^10.9.2",
         "ts-node-dev": "^2.0.0",
+        "tsconfig-paths": "^4.2.0",
         "typescript": "^5.3.2"
     },
     "prisma": {
-        "seed": "ts-node prisma/seed.ts"
+        "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
     }
 }
