@@ -23,32 +23,6 @@ test.describe('Booking Flow', () => {
         await expect(bookButtons.first()).toBeVisible();
         await bookButtons.first().click();
 
-        ```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Booking Flow', () => {
-    test('guest can view courts and create a booking', async ({ page }) => {
-        // 1. Navigate to booking page
-        await page.goto('/book');
-        await expect(page).toHaveTitle(/Smashpoint/);
-
-        // 2. Select a date (Random future date to avoid collisions)
-        const date = new Date();
-        const randomDays = Math.floor(Math.random() * 10) + 2; // 2 to 12 days in future
-        date.setDate(date.getDate() + randomDays);
-        const dateStr = date.toISOString().split('T')[0];
-
-        await page.fill('input[type="date"]', dateStr);
-
-        // Wait for courts to load
-        await expect(page.getByText('Court 1')).toBeVisible();
-
-        // 3. Click "Book Court" for Court 1
-        // Find the first "Book Court" button and click it
-        const bookButtons = page.getByRole('button', { name: 'Book Court' });
-        await expect(bookButtons.first()).toBeVisible();
-        await bookButtons.first().click();
-
         // 4. Verify Modal opens
         await expect(page.getByText('Book Court 1')).toBeVisible();
 
@@ -70,4 +44,3 @@ test.describe('Booking Flow', () => {
         */
     });
 });
-```
