@@ -1,3 +1,13 @@
+import { bookingService } from '../services/bookingService';
+import prisma from '../db';
+import { PrismaClient } from '@prisma/client';
+import { DeepMockProxy, mockDeep, mockReset } from 'jest-mock-extended';
+
+jest.mock('../db', () => ({
+    __esModule: true,
+    default: mockDeep<PrismaClient>(),
+}));
+
 const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
 
 describe('BookingService', () => {
