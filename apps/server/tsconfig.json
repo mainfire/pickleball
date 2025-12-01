@@ -12,7 +12,8 @@
         "forceConsistentCasingInFileNames": true,
         "moduleResolution": "node",
         "resolveJsonModule": true,
-        "baseUrl": "."
+        "baseUrl": ".",
+        "rootDir": "./src"
     },
     "include": [
         "src/**/*"
