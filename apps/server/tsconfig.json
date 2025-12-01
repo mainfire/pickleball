@@ -13,7 +13,11 @@
         "moduleResolution": "node",
         "resolveJsonModule": true,
         "baseUrl": ".",
-        "rootDir": "./src"
+        "paths": {
+            "@smashpoint/shared": [
+                "../../packages/shared/index.ts"
+            ]
+        }
     },
     "include": [
         "src/**/*"
