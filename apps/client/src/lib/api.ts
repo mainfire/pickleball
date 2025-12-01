@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface RequestOptions extends RequestInit {
     token?: string;
@@ -44,6 +44,11 @@ export const endpoints = {
     },
     memberships: {
         me: () => api('/memberships/me'),
+    },
+    staff: {
+        schedule: (date: string) => api<any[]>(`/staff/schedule?date=${date}`, { headers: getAuthHeaders() }),
+        checkIn: (bookingId: string) => api(`/staff/checkin/${bookingId}`, { method: 'POST', headers: getAuthHeaders() }),
+        walkIn: (data: any) => api('/staff/walkin', { method: 'POST', body: JSON.stringify(data), headers: getAuthHeaders() }),
     },
     // Bookings
     getAvailability: async (date: string) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Clock, Plus } from 'lucide-react';
 import { WalkInModal } from '../../components/staff/WalkInModal';
+import { endpoints } from '../../lib/api';
 
 export function StaffDashboard() {
     const [bookings, setBookings] = useState<any[]>([]);
@@ -9,13 +10,7 @@ export function StaffDashboard() {
 
     const fetchSchedule = useCallback(async () => {
         try {
-            // We need to add this endpoint to api.ts first, but let's assume it exists or use direct fetch for now
-            // Actually, let's update api.ts properly in the next step.
-            // For now, I'll use a placeholder fetch to show intent
-            const response = await fetch(`http://localhost:3001/api/staff/schedule?date=${selectedDate}`, {
-                headers: { 'x-user-email': 'admin@smashpoint.com' } // Mock Admin
-            });
-            const data = await response.json();
+            const data = await endpoints.staff.schedule(selectedDate);
             setBookings(data);
         } catch (error) {
             console.error('Failed to fetch schedule', error);
@@ -29,10 +24,7 @@ export function StaffDashboard() {
 
     const handleCheckIn = async (bookingId: string) => {
         try {
-            await fetch(`http://localhost:3001/api/staff/checkin/${bookingId}`, {
-                method: 'POST',
-                headers: { 'x-user-email': 'admin@smashpoint.com' }
-            });
+            await endpoints.staff.checkIn(bookingId);
             // Refresh
             fetchSchedule();
         } catch (error) {
