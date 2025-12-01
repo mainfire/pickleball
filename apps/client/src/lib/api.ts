@@ -46,9 +46,9 @@ export const endpoints = {
         me: () => api('/memberships/me'),
     },
     staff: {
-        schedule: (date: string) => api<any[]>(`/staff/schedule?date=${date}`, { headers: getAuthHeaders() }),
-        checkIn: (bookingId: string) => api(`/staff/checkin/${bookingId}`, { method: 'POST', headers: getAuthHeaders() }),
-        walkIn: (data: any) => api('/staff/walkin', { method: 'POST', body: JSON.stringify(data), headers: getAuthHeaders() }),
+        schedule: (date: string) => api<any[]>(`/staff/schedule?date=${date}`),
+        checkIn: (bookingId: string) => api(`/staff/checkin/${bookingId}`, { method: 'POST' }),
+        walkIn: (data: any) => api('/staff/walkin', { method: 'POST', body: JSON.stringify(data) }),
     },
     // Bookings
     getAvailability: async (date: string) => {
@@ -75,18 +75,21 @@ export const endpoints = {
         return response.json();
     },
     pos: {
-        getProducts: () => api<any[]>('/pos/products', { headers: getAuthHeaders() }),
+        getProducts: () => api<any[]>('/pos/products'),
         createOrder: (data: any) => api('/pos/orders', {
             method: 'POST',
-            body: JSON.stringify(data),
-            headers: getAuthHeaders()
+            body: JSON.stringify(data)
         }),
     }
 };
 
 // Helper
 const getAuthHeaders = () => {
-    // Mock Auth
+    const email = localStorage.getItem('userEmail');
+    if (email) {
+        return { 'x-user-email': email };
+    }
+    // Default to member for guest flow if needed, or return empty
     return {
         'x-user-email': 'member@example.com'
     };
