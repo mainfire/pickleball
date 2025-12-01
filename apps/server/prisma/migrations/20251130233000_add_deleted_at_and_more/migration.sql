@@ -1,4 +1,4 @@
-﻿-- CreateEnum
+-- CreateEnum
 CREATE TYPE "MatchType" AS ENUM ('SINGLES', 'DOUBLES');
 
 -- DropForeignKey
